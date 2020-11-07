@@ -1,0 +1,27 @@
+{
+  "name": "webpack-upload-zeroojs-plugin",
+  "version": "0.0.1",
+  "description": "Automatically upload the packaged files of webpack project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "upload",
+    "webpack",
+    "node-ftp",
+    "ftp",
+    "sftp",
+    "ssh2",
+    "auto",
+    "auto-upload"
+  ],
+  "author": "luckyoung",
+  "license": "ISC",
+  "repository": {
+    "url": "https://github.com/smallMote/webpack-upload-zeroojs-plugin"
+  },
+  "dependencies": {
+    "ssh2-sftp-client": "^5.3.1"
+  }
+}
