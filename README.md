@@ -23,7 +23,7 @@ module.exports = {
        port: 'default 22',
        username: 'default root',
        password: 'default null',
-       localDir: 'local folder path',
+       localDir: 'local folder path，default webpack output dir',
        remoteDir: 'remote folder path'
     })
   ]

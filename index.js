@@ -2,7 +2,7 @@
  * @author Luckyoung
  * @licence MIT
  * @github https://github.com/smallMote/webpack-sftp-plugin
- * @version beta-0.0.1
+ * @version beta-0.1.2
  */
 const Sftp = require('ssh2-sftp-client')
 const path = require('path')
@@ -54,30 +54,28 @@ function readAllFile(dirPath, reg) {
  */
 function uploadFiles(config= { port: 22, username: 'root' }) {
 	const { localeDir, remoteDir } = config
+	let rootLocalDirName = path.dirname(localeDir)
 	const sftp = new Sftp()
-	return sftp.connect(config).then(async () => {
-		// remote server path
-		const isExistsRemoteDir = await sftp.exists(remoteDir)
-		if (!isExistsRemoteDir) {
-			await sftp.mkdir(remoteDir, true)
-		}
-		return readAllFile(localeDir).map(async item => {
-			const remotePath = item.replace(localeDir, remoteDir)
-			const newDirPath = remotePath.substring(0, remotePath.lastIndexOf('/'))
-			const isExists = await sftp.exists(newDirPath)
-			if (!isExists) {
-				await sftp.mkdir(newDirPath, true)
-				return await sftp.put(item, remotePath)
-			} else {
-				return await sftp.put(item, remotePath)
-			}
+	sftp.connect(config).then(() => {
+		let tempDir = new Set()
+		const savePaths = readAllFile(localeDir).map(item => {
+			const savePath = item.replace(rootLocalDirName, remoteDir).replace(/\\/g, '/')
+			tempDir.add(path.dirname(savePath))
+			return { localPath: item, savePath }
 		})
+		tempDir = [...tempDir].map(item => {
+			return sftp.mkdir(item, true)
+		})
+		return Promise.all(tempDir).then(() => savePaths)
 	})
-		.then(data => {
-			Promise.all(data).then(() => {
-				sftp.end()
-				console.log('Upload complete, connection closed!!!')
-			})
+		.then(res => {
+			return Promise.all(res.map(item => {
+				return sftp.put(item.localPath, item.savePath)
+			}))
+		})
+		.then(() => {
+			sftp.end()
+			console.log('Upload complete, connection closed!!!')
 		})
 		.catch(e => {
 			console.log('upload is fail, connection closed! ERR:', e)
@@ -92,13 +90,12 @@ class WebpackSftpPlugin {
 
 	apply(compiler) {
 		const localeDir = this.config.localeDir || compiler.options.output.path
-		let remoteDir = path.join(this.config.remoteDir, localeDir.substr(localeDir.lastIndexOf('\\') + 1))
-		remoteDir = remoteDir.replace(/\\/g, '/')
+		// let remoteDir = path.join(this.config.remoteDir, localeDir.substr(localeDir.lastIndexOf('\\') + 1))
+		// remoteDir = remoteDir.replace(/\\/g, '/')
 		compiler.hooks.afterEmit.tap('WebpackSftpPlugin', () => {
 			uploadFiles({
 				...this.config,
-				localeDir,
-				remoteDir
+				localeDir
 			})
 		})
 	}
